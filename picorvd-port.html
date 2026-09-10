@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Evidence-based PicoRVD changes for Pico 2 RISC-V, Windows, and CH32V003 programming.">
+  <title>PicoRVD port | CH32V003 RISC-V Exploration</title>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">CH32V003 <span>RISC-V exploration</span></a>
+    <nav aria-label="Primary navigation">
+      <a href="index.html">Overview</a>
+      <a class="active" href="picorvd-port.html">PicoRVD port</a>
+      <a href="benchmark.html">Benchmark</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="page-intro">
+      <p class="eyebrow">Porting record</p>
+      <h1>PicoRVD: original Pico to Pico 2 RISC-V on Windows</h1>
+      <p class="lede">The original project is a USB GDB server and SWIO programmer. The port preserves that job while replacing assumptions that were tied to the RP2040, older SDK/TinyUSB integration, and a Linux-centric development path.</p>
+    </section>
+
+    <section class="notice success">
+      <strong>Scope verified.</strong> The upstream CoreMark checkout was not edited. CH32V003 support is an external port layer and Windows build tooling alongside PicoRVD, keeping the workload source auditable.
+    </section>
+
+    <section class="content-section">
+      <p class="eyebrow">The change map</p>
+      <h2>What changed—and why</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Evidence of change</th><th>Why it was needed</th></tr></thead>
+          <tbody>
+            <tr><td>Board, SDK, and Windows toolchain</td><td><code>PICO_BOARD=pico2</code>, <code>PICO_PLATFORM=rp2350-riscv</code>; SDK/VS Code integration is configured for SDK 2.3.0 and the Pico RISC-V toolchain.</td><td>Selects Pico 2 hardware and its RISC-V cores explicitly, while using the Windows-installed SDK rather than fetching the older 1.5.1 SDK checkout.</td></tr>
+            <tr><td>USB CDC transport</td><td><code>tusb.h</code>, manual <code>tud_init()</code>/<code>tud_task()</code>, direct CDC calls, and the custom <code>tusb_config.h</code> were removed from the normal target. <code>stdio_init_all()</code> and <code>stdio_usb</code> now provide the transport.</td><td>Uses the SDK 2.x USB framework. USB is kept out of ordinary <code>printf</code> routing so UART logging cannot corrupt GDB packets; the GDB loop still reads and flushes USB one byte at a time.</td></tr>
+            <tr><td>Connection sequencing</td><td>Startup waits for <code>stdio_usb_connected()</code>, then delays briefly before probing the target. Two USB-only probe targets were added.</td><td>Prevents SWIO setup’s blocking behavior from interfering with host enumeration and gives a minimal way to isolate USB setup failures from debugger/SWIO failures.</td></tr>
+            <tr><td>SWIO timing</td><td>The PIO divider changed from fixed <code>12</code> to <code>clock_get_hz(clk_sys) / 10,000,000</code>. Reset changed from a loop-count delay to <code>busy_wait_us_32(40)</code>.</td><td>A fixed divider was calibrated for the 125 MHz original Pico. Pico 2 normally runs a different system clock, so the port targets the required 100 ns PIO tick and a clock-independent reset-low pulse safely above the CH32 requirement.</td></tr>
+            <tr><td>Flash writer on a faster host</td><td>Target-side routines are explicitly 32-bit aligned; each abstract-command invocation is waited for before the next <code>DATA0</code> write and after the final word. Padding changed from <code>0xDEADBEEF</code> to erased-flash <code>0xFFFFFFFF</code>.</td><td>The Pico 2 RISC-V core must not make an unaligned 32-bit load from the 16-bit routine arrays. The new wait order avoids overwriting/aborting work that the faster host can otherwise outrun, and padding preserves the erased state.</td></tr>
+            <tr><td>GDB lifecycle</td><td>GDB detach explicitly resumes the target; <code>SoftBreak::reset()</code> records the halted state; the page bitmap uses a 64-bit shift.</td><td>Flashing leaves the target halted. Resuming on detach lets freshly programmed firmware actually run and keeps local halt bookkeeping consistent. The 64-bit shift makes high page bits safe.</td></tr>
+            <tr><td>Startup reliability</td><td>The packet parser’s static startup self-test is now opt-in with <code>PICORVD_ENABLE_STARTUP_SELF_TEST</code>.</td><td>A deliberate early fault could occur before <code>main()</code>, preventing USB enumeration and hiding the useful diagnostic path.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <p class="eyebrow">Target workflow</p>
+      <h2>CH32V003 build and flashing support</h2>
+      <div class="steps">
+        <article><span>1</span><h3>Build on Windows</h3><p><code>tools/build_ch32v003.ps1</code> invokes the Pico SDK’s RISC-V GCC with <code>-march=rv32ec_zicsr</code> and <code>-mabi=ilp32e</code>. It also disables GCC’s memset loop-pattern rewrite when compiling CH32V003fun, avoiding recursive replacement of the runtime’s tiny <code>memset</code>.</p></article>
+        <article><span>2</span><h3>Program through PicoRVD</h3><p><code>tools/flash_ch32v003.ps1</code> uses the bundled RISC-V GDB over PicoRVD’s Windows COM port. Its <code>load</code> operation exercises PicoRVD’s standard GDB <code>vFlash</code> path, compares sections, resets, then detaches.</p></article>
+        <article><span>3</span><h3>Observe the target</h3><p>The supplied V1772 notes reserve PD1 for SWIO on Pico 2 GP28 and use PD0 for an external LED. UART output is enabled at 115200 baud on CH32V003fun’s PD5 TX path for the blink and CoreMark firmware.</p></article>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <p class="eyebrow">Design choices</p>
+      <h2>Why the port is structured this way</h2>
+      <div class="split-section compact">
+        <article class="panel"><h3>Keep the device-facing protocol clean</h3><p>GDB data goes directly through the USB stdio driver; general console text remains on UART. This is a practical boundary: CDC and logging can coexist without interleaving bytes into the remote protocol.</p></article>
+        <article class="panel"><h3>Make timing depend on clocks, not guesses</h3><p>PIO and reset timings are expressed from the active system clock or microseconds. That is the essential portability correction when a fixed-cycle RP2040 implementation moves to a Pico 2 RISC-V host.</p></article>
+        <article class="panel"><h3>Leave CoreMark recognizable</h3><p>The benchmark sources in <code>coremark-main</code> are unchanged. The platform glue is confined to <code>picorvd/example/coremark_port</code>, so target behavior can be reviewed without mixing it into the workload.</p></article>
+      </div>
+    </section>
+
+    <section class="source-note">
+      <h2>Files examined</h2>
+      <p>Primary modified files: <code>CMakeLists.txt</code>, <code>src/main.cpp</code>, <code>src/PicoSWIO.cpp</code>, <code>src/WCHFlash.cpp</code>, <code>src/GDBServer.cpp</code>, <code>src/SoftBreak.cpp</code>, and <code>src/Packet.cpp</code>. Added implementation/support files: <code>tools/build_ch32v003.ps1</code>, <code>tools/flash_ch32v003.ps1</code>, <code>tools/usb_probe.cpp</code>, <code>example/coremark_port/core_portme.[ch]</code>, <code>example/COREMARK.md</code>, and <code>V1772_WIRING.md</code>.</p>
+    </section>
+  </main>
+
+  <footer><p>CH32V003 RISC-V exploration · <a href="benchmark.html">Next: benchmark record</a></p></footer>
+</body>
+</html>
