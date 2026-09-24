@@ -3,74 +3,39 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Notes from porting PicoRVD to Pico 2 RISC-V on Windows and benchmarking the CH32V003.">
-  <title>CH32V003 RISC-V Exploration</title>
+  <meta name="description" content="Independent study in RISC-V implementation and performance analysis.">
+  <title>RISC-V Independent Study</title>
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="index.html">CH32V003 <span>RISC-V exploration</span></a>
-    <nav aria-label="Primary navigation">
-      <a class="active" href="index.html">Overview</a>
-      <a href="picorvd-port.html">PicoRVD port</a>
-      <a href="benchmark.html">Benchmark</a>
-    </nav>
+    <a class="brand" href="index.html">RISC-V Independent Study</a>
+    <nav aria-label="Primary navigation"><a class="active" href="index.html">Project overview</a><a href="research.html">Technical record</a></nav>
   </header>
-
   <main>
-    <section class="hero">
-      <p class="eyebrow">Research notes · Pico 2 / Windows / CH32V003</p>
-      <h1>Making a tiny RISC-V target measurable.</h1>
-      <p class="lede">This site records a Windows-hosted PicoRVD port for the Raspberry Pi Pico 2’s RISC-V cores, the CH32V003 programming path it enabled, and the resulting CoreMark experiment.</p>
-      <div class="hero-actions">
-        <a class="button" href="picorvd-port.html">Read the porting notes</a>
-        <a class="button button-quiet" href="benchmark.html">View the measurement</a>
-      </div>
+    <section class="intro">
+      <p class="kicker">EGCP-3980 · Fall 2026</p>
+      <h1>Comparative implementation and performance analysis of RISC-V systems</h1>
+      <p class="lead">This independent study examines how RISC-V systems are brought up, measured, and compared across an FPGA platform and the RP2350 embedded platform. RISC-V is an open instruction-set architecture: a shared specification for the instructions a processor can execute.</p>
+      <p>This site records the project’s technical progress. Its current entry documents a Windows-based PicoRVD port and a CH32V003 performance experiment.</p>
     </section>
-
-    <section class="metric-grid" aria-label="Key findings">
-      <article class="metric-card">
-        <p class="metric-value">88.96</p>
-        <p class="metric-label">iterations / second</p>
-      </article>
-      <article class="metric-card">
-        <p class="metric-value">1.85</p>
-        <p class="metric-label">iterations / MHz at 48 MHz</p>
-      </article>
-      <article class="metric-card">
-        <p class="metric-value">2 KiB</p>
-        <p class="metric-label">CH32V003 SRAM constraint</p>
-      </article>
+    <section class="section" aria-labelledby="phases-title">
+      <p class="kicker">Project plan</p>
+      <h2 id="phases-title">Main phases</h2>
+      <ol class="phases">
+        <li><strong>Platform setup</strong><span>Establish and validate RISC-V development environments.</span></li>
+        <li><strong>Measurement</strong><span>Run comparable programs and performance benchmarks.</span></li>
+        <li><strong>Parallel execution</strong><span>Examine dual-core or simulated parallel workloads.</span></li>
+        <li><strong>Instructional materials</strong><span>Translate the work into concise ADLD learning materials.</span></li>
+      </ol>
     </section>
-
-    <section class="split-section">
-      <article class="panel">
-        <p class="eyebrow">01 · Porting record</p>
-        <h2>PicoRVD on Pico 2 RISC-V</h2>
-        <p>The port moves from the original Pico/Linux assumptions to a Pico 2 RISC-V, Windows, SDK 2.x workflow. The key work is USB transport migration, PIO timing recalibration, robust flash sequencing, and GDB detach behavior.</p>
-        <a class="text-link" href="picorvd-port.html">Explore the code-level changes <span aria-hidden="true">→</span></a>
-      </article>
-      <article class="panel">
-        <p class="eyebrow">02 · Measurement record</p>
-        <h2>CoreMark on CH32V003</h2>
-        <p>CoreMark’s upstream workload files remain unmodified. A separate bare-metal port layer provides the timer, UART output, watchdog service, and target-specific build settings.</p>
-        <a class="text-link" href="benchmark.html">See method, arithmetic, and limits <span aria-hidden="true">→</span></a>
-      </article>
-    </section>
-
-    <aside class="notice" aria-label="Reporting note">
-      <strong>Reporting note.</strong> This result is a project-specific CoreMark-derived measurement, not an official CoreMark score. The port uses a 1,200-byte static data block instead of CoreMark’s standard 2,000 bytes, and the captured run reports that its CRC cannot be validated for its seed values.
-    </aside>
-
-    <section class="method">
-      <p class="eyebrow">How these notes were produced</p>
-      <h2>Comparison scope</h2>
-      <p><code>picorvd</code> was compared with <code>old-unmodified-code/picorvd-master</code>, normalizing line endings and excluding generated build artifacts. <code>coremark-main</code> was compared with <code>old-unmodified-code/coremark-main</code>: no source-content differences were found. The CoreMark target adaptation is intentionally kept under <code>picorvd/example/coremark_port</code>.</p>
+    <section class="section current-work" aria-labelledby="current-title">
+      <p class="kicker">Current technical record</p>
+      <h2 id="current-title">PicoRVD and CH32V003</h2>
+      <p>The first documented experiment adapts PicoRVD, a USB debugging and programming tool, for the Raspberry Pi Pico 2’s RISC-V environment on Windows. It then uses that workflow to build, program, and time a CoreMark-derived workload on the CH32V003, a small RISC-V microcontroller.</p>
+      <p><a class="action-link" href="research.html">Read the technical record and benchmark results</a></p>
     </section>
   </main>
-
-  <footer>
-    <p>CH32V003 RISC-V exploration · static site ready for GitHub Pages</p>
-  </footer>
+  <footer><p>EGCP-3980 Independent Study in Computer Engineering</p></footer>
 </body>
 </html>
