@@ -5,7 +5,7 @@ This is a dependency-free static site for GitHub Pages.
 ## Pages
 
 - `index.html` - concise independent-study overview
-- `research.html` - combined PicoRVD porting record and CH32V003 benchmark results
+- `research.html` - Pico 2 RISC-V and CH32V003 performance comparison
 
 All assets and links are relative, so the site can be published from a dedicated Pages repository, a project Pages path, or a custom domain.
 

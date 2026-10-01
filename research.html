@@ -3,66 +3,77 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="PicoRVD porting record and CH32V003 CoreMark-derived benchmark results.">
-  <title>Technical Record | RISC-V Independent Study</title>
+  <meta name="description" content="A concise performance comparison of the Pico 2 RISC-V core and CH32V003.">
+  <title>Chip Performance | RISC-V Independent Study</title>
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
   <header class="site-header">
     <a class="brand" href="index.html">RISC-V Independent Study</a>
-    <nav aria-label="Primary navigation"><a href="index.html">Project overview</a><a class="active" href="research.html">Technical record</a></nav>
+    <nav aria-label="Primary navigation"><a href="index.html">Project overview</a><a class="active" href="research.html">Chip performance</a></nav>
   </header>
   <main>
     <section class="page-heading">
-      <p class="kicker">Current experiment</p>
-      <h1>PicoRVD port and CH32V003 performance measurement</h1>
-      <p class="lead">This record combines the porting work and its first benchmark result. It is written for readers new to RISC-V and separates implementation facts from the limits of the measurement.</p>
+      <p class="kicker">Performance record</p>
+      <h1>Chip Performance</h1>
+      <p class="lead">This page collects measurements from the project as they are ready. It starts with the same CoreMark workload on two RISC-V chips: the Pico 2’s Hazard3 core and the CH32V003.</p>
     </section>
-    <section class="section" aria-labelledby="context-title">
-      <p class="kicker">Context</p>
-      <h2 id="context-title">What was built</h2>
-      <p><strong>PicoRVD</strong> is firmware that lets a computer use a Raspberry Pi Pico as a USB debugger and programmer for supported RISC-V targets. This work moves it from the original Pico/Linux assumptions to the Pico 2’s RISC-V platform on Windows. The resulting tool is used to program a CH32V003 target and capture serial output from its benchmark.</p>
-    </section>
-    <section class="section" aria-labelledby="port-title">
-      <p class="kicker">Porting findings</p>
-      <h2 id="port-title">Changes required for the Pico 2 and Windows workflow</h2>
-      <div class="table-wrap"><table><thead><tr><th>Area</th><th>Change</th><th>Purpose</th></tr></thead><tbody>
-        <tr><td>Build configuration</td><td>Select the Pico 2 and RP2350 RISC-V platform; use the Windows-installed Pico SDK and RISC-V toolchain.</td><td>Build PicoRVD for the intended board and host environment.</td></tr>
-        <tr><td>USB communication</td><td>Replace direct TinyUSB setup with the Pico SDK USB stdio driver; wait for the USB connection before target probing.</td><td>Use the newer SDK integration and avoid interrupting USB enumeration.</td></tr>
-        <tr><td>SWIO timing</td><td>Calculate the PIO clock divider from the active system clock and use a microsecond reset delay.</td><td>Preserve the target programming signal timing on a host with a different clock rate.</td></tr>
-        <tr><td>Flash programming</td><td>Align target-side routines, wait for each flash command, and retain erased values when padding a page.</td><td>Prevent unaligned access and incomplete or overwritten flash operations.</td></tr>
-        <tr><td>GDB completion</td><td>Resume the target when the debugger detaches and preserve the correct halted-state record.</td><td>Allow newly programmed firmware to run after loading.</td></tr>
-        <tr><td>Windows tooling</td><td>Add PowerShell build and flash scripts, plus USB and wiring checks.</td><td>Provide a repeatable local workflow from build through programming.</td></tr>
-      </tbody></table></div>
-      <p class="source-note">The upstream <code>coremark-main</code> files were compared with the preserved unmodified copy and had no source-content changes. Target-specific CoreMark code is kept separately under <code>picorvd/example/coremark_port</code>.</p>
-    </section>
-    <section class="section" aria-labelledby="method-title">
-      <p class="kicker">Benchmark method</p>
-      <h2 id="method-title">CoreMark-derived measurement</h2>
-      <p>CoreMark is a compact processor benchmark. The CH32V003 port uses a free-running SysTick counter, a UART report channel, and static on-chip memory. Startup messages and LED indications occur before or after the timed region. During normal timing, interrupts are disabled and no UART output is produced.</p>
-      <div class="table-wrap"><table class="results-table"><caption>Table 1. Captured CoreMark configuration and raw output</caption><tbody>
-        <tr><th>Target</th><td>CH32V003 at 48 MHz</td></tr><tr><th>CoreMark data size</th><td>1,200 bytes, static memory</td></tr><tr><th>Timer</th><td>SysTick, 6,000,000 ticks per second</td></tr><tr><th>Iterations</th><td>1,100</td></tr><tr><th>Total ticks</th><td>74,193,287</td></tr><tr><th>Compiler</th><td>GCC 15.2.0</td></tr><tr><th>Compiler flags</th><td><code>-O2 -march=rv32ec_zicsr -mabi=ilp32e -ffunction-sections -fdata-sections</code></td></tr><tr><th>CoreMark display</th><td>12 seconds; 91 iterations per second</td></tr>
-      </tbody></table></div>
-    </section>
-    <section class="section" aria-labelledby="results-title">
-      <p class="kicker">Calculated result</p>
-      <h2 id="results-title">Rate derived from the raw timer count</h2>
-      <p>CoreMark prints whole-number seconds and iterations per second. The calculation below uses the full tick count, so it avoids rounding the elapsed time to 12 seconds.</p>
-      <div class="table-wrap"><table class="results-table"><caption>Table 2. Derived performance values</caption><thead><tr><th>Quantity</th><th>Calculation</th><th>Value</th></tr></thead><tbody>
-        <tr><td>Elapsed time</td><td>74,193,287 ticks / 6,000,000 ticks per second</td><td>12.36555 s</td></tr><tr><td>Iteration rate</td><td>1,100 iterations / 12.36555 s</td><td>88.95684 iterations/s</td></tr><tr><td>Rate per MHz</td><td>88.95684 iterations/s / 48 MHz</td><td>1.85327 iterations/MHz</td></tr>
-      </tbody></table></div>
-    </section>
-    <section class="section" aria-labelledby="limits-title">
-      <p class="kicker">Interpretation</p>
-      <h2 id="limits-title">How to report this result</h2>
-      <p>This is a configuration-specific CoreMark-derived measurement, not an official CoreMark score. The normal CoreMark data block is 2,000 bytes; this port uses 1,200 bytes because the CH32V003 has 2 KiB of SRAM and the benchmark must also leave room for the program stack. The captured output also states that operation cannot be validated for its performance-mode seed values.</p>
-      <p>Comparisons should retain the CoreMark version, data size, memory model, seed values, iteration policy, clock rate, compiler, and compiler flags. Diagnostic UART output and debugger traffic should remain outside the timed interval.</p>
-    </section>
-    <section class="section" aria-labelledby="evidence-title">
-      <p class="kicker">Source record</p>
-      <h2 id="evidence-title">Files examined</h2>
-      <p>Porting findings are based on a comparison of <code>picorvd</code> and <code>old-unmodified-code/picorvd-master</code>, excluding generated output and normalizing line endings. The primary implementation changes are in <code>CMakeLists.txt</code>, <code>src/main.cpp</code>, <code>src/PicoSWIO.cpp</code>, <code>src/WCHFlash.cpp</code>, <code>src/GDBServer.cpp</code>, and <code>src/SoftBreak.cpp</code>. The CH32V003 build, flash, and benchmark support is in <code>tools/</code> and <code>example/coremark_port/</code>.</p>
-    </section>
+    <div class="performance-layout">
+      <aside class="section-nav" aria-label="On this page">
+        <p>On this page</p>
+        <ul><li><a href="#coremark">CoreMark</a></li><li><a href="#comparison">Comparison</a></li><li><a href="#method">Method</a></li><li><a href="#next">Next tests</a></li></ul>
+      </aside>
+      <div class="performance-content">
+        <section class="section" id="coremark" aria-labelledby="coremark-title">
+          <p class="kicker">CoreMark</p>
+          <h2 id="coremark-title">One workload, two chips</h2>
+          <p>CoreMark is a small benchmark made from integer-heavy tasks. Here it provides a controlled starting point: both chips run the same unmodified CoreMark 1.0 sources, the same 1,200-byte static data setting, and one core. The Pico 2 test uses Hazard3 core 0 only.</p>
+          <div class="table-wrap"><table class="comparison-table"><caption>Table 1. Matched CoreMark run configuration and raw output</caption><thead><tr><th scope="col">Measure</th><th scope="col">Pico 2 RISC-V</th><th scope="col">CH32V003</th></tr></thead><tbody>
+            <tr><th scope="row">Core in use</th><td>Hazard3 core 0 only</td><td>Single QingKe V2 core</td></tr>
+            <tr><th scope="row">Core clock</th><td>150 MHz</td><td>48 MHz</td></tr>
+            <tr><th scope="row">CoreMark data</th><td>1,200 bytes static; reported size 400</td><td>1,200 bytes static; reported size 400</td></tr>
+            <tr><th scope="row">Timer</th><td>Hardware timer, 1,000,000 ticks/s</td><td>SysTick, 6,000,000 ticks/s</td></tr>
+            <tr><th scope="row">Iterations</th><td class="number">20,000</td><td class="number">1,100</td></tr>
+            <tr><th scope="row">Total ticks</th><td class="number">16,128,377</td><td class="number">74,193,287</td></tr>
+            <tr><th scope="row">Compiler</th><td>GCC 15.2.0</td><td>GCC 15.2.0</td></tr>
+            <tr><th scope="row">ISA and ABI</th><td><code>rv32imac_zicsr_zifencei_zba_zbb_zbs_zbkb</code>; <code>ilp32</code></td><td><code>rv32ec_zicsr</code>; <code>ilp32e</code></td></tr>
+            <tr><th scope="row">Code and data placement</th><td>XIP flash code; static on-chip SRAM data</td><td>Flash code; static on-chip SRAM data</td></tr>
+          </tbody></table></div>
+        </section>
+        <section class="section" id="comparison" aria-labelledby="comparison-title">
+          <p class="kicker">Comparison</p>
+          <h2 id="comparison-title">Raw timer counts tell the clearer story</h2>
+          <p>The benchmark rounds its printed seconds. The values below use each board’s timer count instead. That keeps the comparison tied to the measured interval rather than to a rounded display value.</p>
+          <div class="table-wrap"><table class="comparison-table"><caption>Table 2. Values calculated from the captured timer output</caption><thead><tr><th scope="col">Measure</th><th scope="col">Pico 2 RISC-V</th><th scope="col">CH32V003</th></tr></thead><tbody>
+            <tr><th scope="row">Elapsed time</th><td class="number">16.12838 s</td><td class="number">12.36555 s</td></tr>
+            <tr><th scope="row">Iteration rate</th><td class="number">1,240.05038 /s</td><td class="number">88.95684 /s</td></tr>
+            <tr><th scope="row">Rate per MHz</th><td class="number">8.26700 /MHz</td><td class="number">1.85327 /MHz</td></tr>
+            <tr><th scope="row">Relative to CH32V003</th><td class="number">13.94× throughput; 4.46× per MHz</td><td class="number">Reference</td></tr>
+          </tbody></table></div>
+          <figure class="bar-chart" aria-labelledby="rate-chart-title">
+            <figcaption id="rate-chart-title">Figure 1. CoreMark iteration rate from raw timer counts</figcaption>
+            <div class="bar-row"><span class="bar-label">Pico 2 RISC-V</span><div class="bar-track"><div class="bar pico-bar" style="width:100%"></div></div><span class="bar-value">1,240.05 /s</span></div>
+            <div class="bar-row"><span class="bar-label">CH32V003</span><div class="bar-track"><div class="bar ch32-bar" style="width:7.17%"></div></div><span class="bar-value">88.96 /s</span></div>
+          </figure>
+          <p class="result-note">The Pico 2 completes more benchmark work each second and also more work per MHz in this configuration. That is a useful result for this matched test; it is not a universal ranking of the two chips.</p>
+        </section>
+        <section class="section" id="method" aria-labelledby="method-title">
+          <p class="kicker">Method and limits</p>
+          <h2 id="method-title">What these numbers do and do not mean</h2>
+          <p>For each board, rate = iterations × timer frequency / total ticks. The runs use CoreMark’s performance seeds, which intentionally produce the “Cannot validate operation” message shown in the serial output. A separate profile run checks known CRC values.</p>
+          <p>These are not official CoreMark scores. The standard CoreMark data block is 2,000 bytes; the shared 1,200-byte setting is necessary for the CH32V003’s 2 KiB SRAM and keeps this particular comparison fair. The smaller workload must not be compared with published 2 KB CoreMark figures.</p>
+        </section>
+        <section class="section" id="next" aria-labelledby="next-title">
+          <p class="kicker">Next tests</p>
+          <h2 id="next-title">More than one benchmark</h2>
+          <div class="next-tests">
+            <article><h3>Instruction-rate tests</h3><p>MIPS-style measurements will isolate arithmetic, branch, and memory instructions.</p></article>
+            <article><h3>Cycle accounting</h3><p>Estimated cycle counts will show where time is spent inside each test.</p></article>
+            <article><h3>Bus and memory behavior</h3><p>Bus-fabric and memory details will help explain differences that a single score cannot show.</p></article>
+          </div>
+        </section>
+      </div>
+    </div>
   </main>
   <footer><p>EGCP-3980 Independent Study in Computer Engineering</p></footer>
 </body>
