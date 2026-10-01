@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A concise performance comparison of the Pico 2 RISC-V core and CH32V003.">
+  <meta name="description" content="CoreMark and instruction-path measurements for the Pico 2 RISC-V core and CH32V003.">
   <title>Chip Performance | RISC-V Independent Study</title>
   <link rel="stylesheet" href="assets/site.css">
 </head>
@@ -16,12 +16,12 @@
     <section class="page-heading">
       <p class="kicker">Performance record</p>
       <h1>Chip Performance</h1>
-      <p class="lead">This page collects measurements from the project as they are ready. It starts with the same CoreMark workload on two RISC-V chips: the Pico 2’s Hazard3 core and the CH32V003.</p>
+      <p class="lead">This page records two kinds of measurements: a matched CoreMark run and smaller instruction-path workloads. Both compare the Pico 2’s Hazard3 core with the CH32V003, but they answer different questions.</p>
     </section>
     <div class="performance-layout">
       <aside class="section-nav" aria-label="On this page">
         <p>On this page</p>
-        <ul><li><a href="#coremark">CoreMark</a></li><li><a href="#comparison">Comparison</a></li><li><a href="#method">Method</a></li><li><a href="#next">Next tests</a></li></ul>
+        <ul><li><a href="#coremark">CoreMark</a></li><li><a href="#comparison">Comparison</a></li><li><a href="#instruction-path">Instruction paths</a></li><li><a href="#method">How to read this</a></li></ul>
       </aside>
       <div class="performance-content">
         <section class="section" id="coremark" aria-labelledby="coremark-title">
@@ -29,7 +29,7 @@
           <h2 id="coremark-title">One workload, two chips</h2>
           <p>CoreMark is a small benchmark made from integer-heavy tasks. Here it provides a controlled starting point: both chips run the same unmodified CoreMark 1.0 sources, the same 1,200-byte static data setting, and one core. The Pico 2 test uses Hazard3 core 0 only.</p>
           <div class="table-wrap"><table class="comparison-table"><caption>Table 1. Matched CoreMark run configuration and raw output</caption><thead><tr><th scope="col">Measure</th><th scope="col">Pico 2 RISC-V</th><th scope="col">CH32V003</th></tr></thead><tbody>
-            <tr><th scope="row">Core in use</th><td>Hazard3 core 0 only</td><td>Single QingKe V2 core</td></tr>
+            <tr><th scope="row">Core in use</th><td>Hazard3 core 0 only</td><td>Single QingKe V2A core</td></tr>
             <tr><th scope="row">Core clock</th><td>150 MHz</td><td>48 MHz</td></tr>
             <tr><th scope="row">CoreMark data</th><td>1,200 bytes static; reported size 400</td><td>1,200 bytes static; reported size 400</td></tr>
             <tr><th scope="row">Timer</th><td>Hardware timer, 1,000,000 ticks/s</td><td>SysTick, 6,000,000 ticks/s</td></tr>
@@ -57,20 +57,39 @@
           </figure>
           <p class="result-note">The Pico 2 completes more benchmark work each second and also more work per MHz in this configuration. That is a useful result for this matched test; it is not a universal ranking of the two chips.</p>
         </section>
+        <section class="section" id="instruction-path" aria-labelledby="instruction-path-title">
+          <p class="kicker">Instruction paths</p>
+          <h2 id="instruction-path-title">Small workloads show what a single score hides</h2>
+          <p>These eight tests repeat a small piece of work many times. They are useful for seeing how arithmetic, branches, memory traffic, calls, and software versus hardware math behave in the tested programs. They are not isolated instruction-latency tests, and they are not a MIPS score.</p>
+          <div class="table-wrap"><table class="results-table"><caption>Table 3. Measured time per outer-loop iteration for the supplied instruction-path captures</caption><thead><tr><th scope="col">Workload</th><th scope="col">What one iteration means</th><th scope="col">CH32V003<br>elapsed core periods*</th><th scope="col">Pico 2 RISC-V<br>measured cycles</th></tr></thead><tbody>
+            <tr><th scope="row">ALU updates</th><td>Six source-level add, XOR, and rotate-style updates.</td><td class="number">22.005</td><td class="number">8.001</td></tr>
+            <tr><th scope="row">Branch steps</th><td>A xorshift update, a data-dependent choice, and loop control.</td><td class="number">24.004</td><td class="number">13.761</td></tr>
+            <tr><th scope="row">Read-modify-write</th><td>One volatile 32-bit SRAM read and write, plus address and loop work.</td><td class="number">18.003</td><td class="number">10.007</td></tr>
+            <tr><th scope="row">Register pressure</th><td>Twelve accumulator updates; the CH32 build also spills values to its stack.</td><td class="number">36.007</td><td class="number">14.006</td></tr>
+            <tr><th scope="row">Call and return</th><td>One real call, six callee operations, a return, and caller loop work.</td><td class="number">26.003</td><td class="number">14.004</td></tr>
+            <tr><th scope="row">CRC-like bit work</th><td>Four bit-update rounds. Despite an older label, this is not four bytes.</td><td class="number">54.003</td><td class="number">37.006</td></tr>
+            <tr><th scope="row">32-bit multiply</th><td>One source multiplication.</td><td class="number">459.990</td><td class="number">5.006</td></tr>
+            <tr><th scope="row">Quotient and remainder</th><td>One unsigned quotient <em>and</em> one unsigned remainder, not one divide alone.</td><td class="number">154.804</td><td class="number">48.006</td></tr>
+          </tbody></table></div>
+          <p class="source-note">* The CH32V003 did not use a cycle counter. Its value is the captured SysTick count multiplied by eight because SysTick ran at HCLK/8 (6 MHz at a 48 MHz core clock). The Pico 2 value is the captured <code>mcycle</code> count. Each Pico 2 test used 1,000,000 iterations; each CH32V003 test used 10,000.</p>
+          <div class="instruction-notes" aria-label="Key interpretation notes">
+            <article><h3>Same source does not mean the same instructions</h3><p>On the Pico 2, the compiler used native extensions such as rotate, address-generation, multiply, divide, and remainder instructions. The CH32V003 V2A build is RV32EC: its rotate expressions are synthesized, and multiply and divide use software helpers.</p></article>
+            <article><h3>Memory is part of the result</h3><p>The CH32V003 runs Flash-linked code with one configured Flash wait state and SRAM data. The Pico 2 runs cached XIP-flash code and SRAM data. Its load/store loop also has an immediate load-use dependency that the Hazard3 manual documents as a one-cycle bubble.</p></article>
+            <article><h3>What the multiply rows really show</h3><p>The 459.990-period CH32V003 multiply row is the full shift/add helper path in this binary, not hardware multiply latency. On the Pico 2, the five-instruction loop contains a native <code>mul</code>. The divide row likewise includes both quotient and remainder work.</p></article>
+          </div>
+          <div class="manual-figures">
+            <figure class="manual-figure"><img src="assets/manual-figures/qingke-v2-overview.png" alt="Excerpt from the QingKe V2 manual explaining that RV32E has 16 general-purpose registers and that V2C, rather than V2A, supports hardware multiplication."><figcaption>Figure 2. QingKe V2 manual overview. The tested CH32V003 uses the V2A RV32EC variant; this is why its multiply and divide workloads take software-helper paths.</figcaption></figure>
+            <figure class="manual-figure"><img src="assets/manual-figures/hazard3-timing-excerpt.png" alt="Excerpt from the RP2350 Hazard3 timing table showing branch, load, multiply, divide, and remainder timing under perfect bus behavior."><figcaption>Figure 3. RP2350 Hazard3 timing-table excerpt. These are perfect-bus reference timings, not a substitute for the measured whole-loop results above.</figcaption></figure>
+          </div>
+          <p class="source-note">Manual sources: <em>QingKe V2 Microprocessor Manual</em>, V1.3, p. 1; and <em>RP2350 Datasheet</em>, section 3.8.7, pp. 296-301. The run-specific evidence is retained in this study’s CH32V003 and RP2350 performance-test notes.</p>
+        </section>
         <section class="section" id="method" aria-labelledby="method-title">
-          <p class="kicker">Method and limits</p>
-          <h2 id="method-title">What these numbers do and do not mean</h2>
+          <p class="kicker">How to read this</p>
+          <h2 id="method-title">Keep the measurement boundary in view</h2>
           <p>For each board, rate = iterations × timer frequency / total ticks. The runs use CoreMark’s performance seeds, which intentionally produce the “Cannot validate operation” message shown in the serial output. A separate profile run checks known CRC values.</p>
           <p>These are not official CoreMark scores. The standard CoreMark data block is 2,000 bytes; the shared 1,200-byte setting is necessary for the CH32V003’s 2 KiB SRAM and keeps this particular comparison fair. The smaller workload must not be compared with published 2 KB CoreMark figures.</p>
-        </section>
-        <section class="section" id="next" aria-labelledby="next-title">
-          <p class="kicker">Next tests</p>
-          <h2 id="next-title">More than one benchmark</h2>
-          <div class="next-tests">
-            <article><h3>Instruction-rate tests</h3><p>MIPS-style measurements will isolate arithmetic, branch, and memory instructions.</p></article>
-            <article><h3>Cycle accounting</h3><p>Estimated cycle counts will show where time is spent inside each test.</p></article>
-            <article><h3>Bus and memory behavior</h3><p>Bus-fabric and memory details will help explain differences that a single score cannot show.</p></article>
-          </div>
+          <p>The instruction-path table has a different boundary on each chip. Pico 2 records <code>mcycle</code> and <code>minstret</code> around the workload; CH32V003 currently uses only its documented SysTick timer, so no retired-instruction count, CPI, or IPC is claimed for it. Neither capture includes cache-hit, bus-contention, trace, or repeated-run data, so those causes are not assigned to individual cycles.</p>
+          <p>The next useful step is evidence, not a larger score: repeated runs, a safe CH32V003 counter probe, and separate XIP/Flash versus SRAM-code tests. RP2350 also has XIP and bus-fabric counters that can distinguish cache activity from contention in a future, separately labelled run.</p>
         </section>
       </div>
     </div>
