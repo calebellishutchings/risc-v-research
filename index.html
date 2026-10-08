@@ -4,36 +4,34 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Independent study in RISC-V implementation and performance analysis.">
-  <title>RISC-V Independent Study</title>
+  <title>Independent Study in RISC-V</title>
   <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="index.html">RISC-V Independent Study</a>
-    <nav aria-label="Primary navigation"><a class="active" href="index.html">Project overview</a><a href="research.html">Chip performance</a></nav>
+    <a class="brand" href="index.html">RISC-V Study - Caleb Ellis-Hutchings</a>
+    <nav aria-label="Primary navigation"><a class="active" href="index.html">Project overview</a><a href="research.html">Performance and ISA</a></nav>
   </header>
   <main>
     <section class="intro">
-      <p class="kicker">EGCP-3980 · Fall 2026</p>
-      <h1>Comparative implementation and performance analysis of RISC-V systems</h1>
-      <p class="lead">This independent study examines how RISC-V systems are brought up, measured, and compared across an FPGA platform and the RP2350 embedded platform. RISC-V is an open instruction-set architecture: a shared specification for the instructions a processor can execute.</p>
-      <p>This site records the project’s technical progress. Its current entry documents a Windows-based PicoRVD port and a CH32V003 performance experiment.</p>
-    </section>
-    <section class="section" aria-labelledby="phases-title">
-      <p class="kicker">Project plan</p>
-      <h2 id="phases-title">Main phases</h2>
-      <ol class="phases">
-        <li><strong>Platform setup</strong><span>Establish and validate RISC-V development environments.</span></li>
-        <li><strong>Measurement</strong><span>Run comparable programs and performance benchmarks.</span></li>
-        <li><strong>Parallel execution</strong><span>Examine dual-core or simulated parallel workloads.</span></li>
-        <li><strong>Instructional materials</strong><span>Translate the work into concise ADLD learning materials.</span></li>
-      </ol>
+      <p class="kicker">October 08, 2026</p>
+      <h1>Understanding RISC-V</h1>
+      <p class="lead">This independent study examines how RISC-V systems are brought up, measured, and compared across platforms and varied implementations. It explores RISC-V as an instruction-set architecture, explaining it in a easy-to-digest manner and exploring the underpinnings that make it efficient, portable, and open.</p>
     </section>
     <section class="section current-work" aria-labelledby="current-title">
-      <p class="kicker">Current technical record</p>
-      <h2 id="current-title">PicoRVD and CH32V003</h2>
-      <p>The first documented experiment adapts PicoRVD, a USB debugging and programming tool, for the Raspberry Pi Pico 2’s RISC-V environment on Windows. It then uses that workflow to build, program, and time a CoreMark-derived workload on the CH32V003, a small RISC-V microcontroller.</p>
-      <p><a class="action-link" href="research.html">Read the chip-performance record</a></p>
+      <p class="kicker">What is RISC-V?</p>
+      <h2 id="current-title">An Open Instruction Set Architecture</h2>
+      <p>When code is written, it is compiled, or condensed, from human readable text to machine code, a combination of 1's and 0's that essentially tells the computer what to do. This machine code is inherently ordered in a certain way so that the internal components of the processor route data correctly and run, or execute the machine code so it not only does what it is programmed to do, but also to do so in an efficient manner. This ordering of 1's and 0's is planned out to form "instructions," each of which are a simple task that combined with other instructions to form any program.</p>
+      <p>Because the computer must understand each instruction, there must be some collection, or "set" of instructions that the processor can accept. Most "instruction set architectures," (or ISAs), are coporately controlled, complex, inefficient, and expensive. The researchers who created RISC-V wanted to attack these issues, allowing anyone to develop hardware components that can run RISC-V programs without paying a fee, with easy documentation, and relatively few instructions.</p>
+    </section>
+    <section class="section" aria-labelledby="phases-title">
+      <h2 id="phases-title">RISC-V Analysis</h2>
+      <ol class="phases">
+        <li><strong>Platform Setup</strong><span>RISC-V development environments have varying levels of accessibility and ease-of-use.</span></li>
+        <li><strong><a href="research.html">Performance Analysis</a></strong><span>Performance benchmarks allow a view of the scalability of RISC-V, along with differing implementations of the ISA.</span></li>
+        <li><strong>Parallel Execution</strong><span>Multi-core parallel workloads can greatly increase speed and scalability.</span></li>
+        <li><strong>The Future of RISC-V</strong><span>Beyond embedded systems, RISC-V may find a home in phones, desktops, and data centers.</span></li>
+      </ol>
     </section>
   </main>
   <footer><p>EGCP-3980 Independent Study in Computer Engineering</p></footer>
